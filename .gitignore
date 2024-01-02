@@ -97,7 +97,7 @@ celerybeat-schedule
 *.sage.py
 
 # Environments
-.env
+reference/netology_pd_diplom/.env
 .venv
 env/
 venv/
