@@ -14,6 +14,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
+import logging
+
 
 from backend.models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
     Contact, ConfirmEmailToken
@@ -85,10 +87,34 @@ class ConfirmAccount(APIView):
                 - JsonResponse: The response indicating the status of the operation and any errors.
                 """
         # проверяем обязательные аргументы
+        logging.debug(f"Received email: {request.data.get('email')}")
+        logging.debug(f"Received token: {request.data.get('token')}")
+        print(f"Received email: {request.data.get('email')}")
+        print(f"Received token: {request.data.get('token')}")
+        print(request.data)
+
+
         if {'email', 'token'}.issubset(request.data):
+
+            # existing_tokens = ConfirmEmailToken.objects.values_list('key', flat=True)
+            # print(f"Existing Tokens: {existing_tokens}")
+            # existing_users = ConfirmEmailToken.objects.values_list('user', flat=True)
+            # print(f"Existing users: {existing_users}")
+            # token_query = ConfirmEmailToken.objects.filter(
+            #     user__email=request.data['email'],
+            #     key=f'"{request.data["token"]}"'  # Enclose the token in quotes
+            # )
+            # print(f"Token Query: {token_query.query}")
+            # token = token_query.first()
+
+            # token_query = ConfirmEmailToken.objects.filter(user__email=request.data['email'], key=request.data['token'])
+            # print(f"Token Query: {token_query.query}")
+            # # token = token_query.first()
 
             token = ConfirmEmailToken.objects.filter(user__email=request.data['email'],
                                                      key=request.data['token']).first()
+            print(f"Generated token: {token}")
+            print("Token from database:", token.key if token else "Not found")
             if token:
                 token.user.is_active = True
                 token.user.save()
@@ -160,6 +186,7 @@ class AccountDetails(APIView):
 
         # проверяем остальные данные
         user_serializer = UserSerializer(request.user, data=request.data, partial=True)
+
         if user_serializer.is_valid():
             user_serializer.save()
             return JsonResponse({'Status': True})
@@ -305,13 +332,13 @@ class BasketView(APIView):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
-        items_sting = request.data.get('items')
-        if items_sting:
+        items_dict = request.data.get('items')
+        if items_dict:
+            # try:
+            #     items_dict = load_json(items_sting)
+            # except ValueError:
+            #     return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
             try:
-                items_dict = load_json(items_sting)
-            except ValueError:
-                return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
-            else:
                 basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
                 objects_created = 0
                 for order_item in items_dict:
@@ -330,6 +357,8 @@ class BasketView(APIView):
                         return JsonResponse({'Status': False, 'Errors': serializer.errors})
 
                 return JsonResponse({'Status': True, 'Создано объектов': objects_created})
+            except ValueError:
+                return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
     # удалить товары из корзины
@@ -376,13 +405,13 @@ class BasketView(APIView):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
-        items_sting = request.data.get('items')
-        if items_sting:
+        items_dict = request.data.get('items')
+        if items_dict:
+            # try:
+            #     items_dict = load_json(items_sting)
+            # except ValueError:
+            #     return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
             try:
-                items_dict = load_json(items_sting)
-            except ValueError:
-                return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
-            else:
                 basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
                 objects_updated = 0
                 for order_item in items_dict:
@@ -391,6 +420,8 @@ class BasketView(APIView):
                             quantity=order_item['quantity'])
 
                 return JsonResponse({'Status': True, 'Обновлено объектов': objects_updated})
+            except ValueError:
+                return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
 
@@ -421,42 +452,52 @@ class PartnerUpdate(APIView):
         if request.user.type != 'shop':
             return JsonResponse({'Status': False, 'Error': 'Только для магазинов'}, status=403)
 
-        url = request.data.get('url')
-        if url:
-            validate_url = URLValidator()
+        file_path = request.data.get('url')
+
+        # url = request.data.get('url')
+        # if url:
+        #     validate_url = URLValidator()
+        #     try:
+        #         validate_url(url)
+        #
+        #     except ValidationError as e:
+        #         return JsonResponse({'Status': False, 'Error': str(e)})
+        if file_path:
             try:
-                validate_url(url)
-            except ValidationError as e:
+                with open(file_path, 'rb') as file:
+                    data = load_yaml(file, Loader=Loader)
+
+
+            # else:
+            #     stream = get(url).content
+
+                # data = load_yaml(stream, Loader=Loader)
+
+                    shop, _ = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
+                    for category in data['categories']:
+                        category_object, _ = Category.objects.get_or_create(id=category['id'], name=category['name'])
+                        category_object.shops.add(shop.id)
+                        category_object.save()
+                    ProductInfo.objects.filter(shop_id=shop.id).delete()
+                    for item in data['goods']:
+                        product, _ = Product.objects.get_or_create(name=item['name'], category_id=item['category'])
+
+                        product_info = ProductInfo.objects.create(product_id=product.id,
+                                                                  external_id=item['id'],
+                                                                  model=item['model'],
+                                                                  price=item['price'],
+                                                                  price_rrc=item['price_rrc'],
+                                                                  quantity=item['quantity'],
+                                                                  shop_id=shop.id)
+                        for name, value in item['parameters'].items():
+                            parameter_object, _ = Parameter.objects.get_or_create(name=name)
+                            ProductParameter.objects.create(product_info_id=product_info.id,
+                                                            parameter_id=parameter_object.id,
+                                                            value=value)
+
+                    return JsonResponse({'Status': True})
+            except Exception as e:
                 return JsonResponse({'Status': False, 'Error': str(e)})
-            else:
-                stream = get(url).content
-
-                data = load_yaml(stream, Loader=Loader)
-
-                shop, _ = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
-                for category in data['categories']:
-                    category_object, _ = Category.objects.get_or_create(id=category['id'], name=category['name'])
-                    category_object.shops.add(shop.id)
-                    category_object.save()
-                ProductInfo.objects.filter(shop_id=shop.id).delete()
-                for item in data['goods']:
-                    product, _ = Product.objects.get_or_create(name=item['name'], category_id=item['category'])
-
-                    product_info = ProductInfo.objects.create(product_id=product.id,
-                                                              external_id=item['id'],
-                                                              model=item['model'],
-                                                              price=item['price'],
-                                                              price_rrc=item['price_rrc'],
-                                                              quantity=item['quantity'],
-                                                              shop_id=shop.id)
-                    for name, value in item['parameters'].items():
-                        parameter_object, _ = Parameter.objects.get_or_create(name=name)
-                        ProductParameter.objects.create(product_info_id=product_info.id,
-                                                        parameter_id=parameter_object.id,
-                                                        value=value)
-
-                return JsonResponse({'Status': True})
-
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
 
@@ -601,8 +642,9 @@ class ContactView(APIView):
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
         if {'city', 'street', 'phone'}.issubset(request.data):
-            request.data._mutable = True
-            request.data.update({'user': request.user.id})
+            # # request.data._mutable = True
+            # request.data.update({'user': request.user.id})
+            request.data['user'] = request.user.id
             serializer = ContactSerializer(data=request.data)
 
             if serializer.is_valid():
@@ -628,6 +670,7 @@ class ContactView(APIView):
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
         items_sting = request.data.get('items')
+        print(items_sting)
         if items_sting:
             items_list = items_sting.split(',')
             query = Q()
@@ -644,16 +687,16 @@ class ContactView(APIView):
 
     # редактировать контакт
     def put(self, request, *args, **kwargs):
+        """
+        Update the contact information of the authenticated user.
+
+        Args:
+        - request (Request): The Django request object.
+
+        Returns:
+        - JsonResponse: The response indicating the status of the operation and any errors.
+        """
         if not request.user.is_authenticated:
-            """
-                   Update the contact information of the authenticated user.
-
-                   Args:
-                   - request (Request): The Django request object.
-
-                   Returns:
-                   - JsonResponse: The response indicating the status of the operation and any errors.
-                   """
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
         if 'id' in request.data:
@@ -719,7 +762,7 @@ class OrderView(APIView):
                """
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
-
+        print(request.data)
         if {'id', 'contact'}.issubset(request.data):
             if request.data['id'].isdigit():
                 try:
