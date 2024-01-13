@@ -1,0 +1,151 @@
+# примеры API-запросов
+
+@baseUrl = http://localhost:8000/api/v1
+
+# регистрация юзера
+POST {{baseUrl}}/user/register
+Content-Type: application/json
+
+{
+  "first_name": "Paul",
+  "last_name": "ZV",
+  "email": "paul_zv@mail.ru",
+  "password": "Wow002265",
+  "company": "svyaznoi",
+  "position": "manager"
+
+}
+
+###
+
+# регистрация юзера
+POST {{baseUrl}}/user/register
+Content-Type: application/json
+
+{
+  "first_name": "Alexx",
+  "last_name": "Grey",
+  "email": "algrey@mail.ru",
+  "password": "Wow112265",
+  "company": "vendor",
+  "position": "director"
+
+}
+
+###
+
+# перевод в active
+
+POST {{baseUrl}}/user/register/confirm
+Content-Type: application/json
+
+{
+  "email": "paul_zv@mail.ru",
+  "token": "5beb6e1adf8117760847994e12d60c5130da6"
+
+}
+
+###
+
+# Логин
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+Authorization: Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f
+
+{
+
+  "email": "paul_zv@mail.ru",
+  "password": "Wow002265"
+
+}
+
+###
+
+# Детали юзера
+GET {{baseUrl}}/user/details
+Content-Type: application/json
+Authorization: Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f
+
+{
+
+  "email": "paul_zv@mail.ru",
+  "password": "Wow002265"
+
+}
+
+###
+
+# Reset password
+POST {{baseUrl}}/user/password_reset
+Content-Type: application/json
+Authorization: Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f
+
+{
+
+  "email": "paul_zv@mail.ru",
+  "password": "Wow002265"
+
+}
+
+###
+
+# Confirm Reset password
+POST {{baseUrl}}/user/password_reset/confirm
+Content-Type: application/json
+Authorization: Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f
+
+{
+
+  "email": "paul_zv@mail.ru",
+  "password": "Wow002267",
+  "token": "e3c77c8780238b5846a2bd8d017f4af0356b0631"
+
+}
+
+###
+
+# Логин c новым паролем
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+Authorization: Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f
+
+{
+
+  "email": "paul_zv@mail.ru",
+  "password": "Wow002267"
+
+}
+
+###
+
+# Изменение Деталей юзера
+POST {{baseUrl}}/user/details
+Content-Type: application/json
+Authorization: Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f
+
+{
+
+  "email": "paul_zv@mail.ru",
+  "password": "Wow002267",
+  "company": "Huewai",
+  "position": "dihead",
+  "type": "shop"
+
+}
+
+###
+
+# Получение информации о Партнере
+GET {{baseUrl}}/partner/state
+Content-Type: application/json
+Authorization: Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f
+
+{
+
+  "email": "paul_zv@mail.ru"
+
+}
+
+
+
+
