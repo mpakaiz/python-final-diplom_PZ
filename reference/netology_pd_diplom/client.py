@@ -2,21 +2,21 @@ import requests
 import json
 from pprint import pprint
 
-## регистрация нового пользователя
-#
-# response = requests.post("http://localhost:8000/api/v1/user/register",
-#                         json={
-#                               "first_name": "Paul",
-#                               "last_name": "ZV",
-#                               "email": "paul_zv@mail.ru",
-#                               "password": "Wow002265",
-#                               "company": "svyaznoi",
-#                               "position": "manager"
-#
-#                               }
-#                         )
-# print(response.status_code)
-# print(response.text)
+# регистрация нового пользователя
+
+response = requests.post("http://localhost:8000/api/v1/user/register",
+                        json={
+                              "first_name": "Paul1",
+                              # "last_name": "ZV1",
+                              "email": "paul_zv1@mail.ru",
+                              "password": "Wow002265",
+                              "company": "svyaznoi",
+                              "position": "manager"
+
+                              }
+                        )
+print(response.status_code)
+print(response.text)
 
 ## регистрация нового пользователя/поставщика
 #
@@ -36,26 +36,26 @@ from pprint import pprint
 # print(response.status_code)
 # print(response.text)
 
-## подтверждение регистрации нового пользователя
-#
-# response = requests.post("http://localhost:8000/api/v1/user/register/confirm",
-#                         json={
-#                             "email": "paul_zv@mail.ru",
-#                             "token": "5beb6e1adf8117760847994e12d60c5130da6", ## используется токен email подтверждения
-#                         }
-#                         )
-# print(response.status_code)
-# print(response.text)
+# подтверждение регистрации нового пользователя
+
+response = requests.post("http://localhost:8000/api/v1/user/register/confirm",
+                        json={
+                            "email": "paul_zv@mail.ru",
+                            "token": "5beb6e1adf8117760847994e12d60c5130da6", ## используется токен email подтверждения
+                        }
+                        )
+print(response.status_code)
+print(response.text)
 
 
 # Логин покупателем
 
-response = requests.post("http://localhost:8000/api/v1/user/login",
-                        json={"email": "paul_zv@mail.ru", "password": "Wow002267"}
-                        )
-print(response.status_code)
-print(response.text)
-#
+# response = requests.post("http://localhost:8000/api/v1/user/login",
+#                         json={"email": "paul_zv@mail.ru", "password": "Wow002267"}
+#                         )
+# print(response.status_code)
+# print(response.text)
+# #
 ## получение информации о пользователе
 # headers = {
 #     "Content-Type": "application/json",
@@ -284,16 +284,16 @@ print(response.text)
 # else:
 #     print("Basket is empty.")
 
-
-headers = {
-    "Content-Type": "application/json",
-    "Authorization": "Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f" ## используется токен авторизации
-}
-data = {
-    "id": "4",
-    "contact": 2
-}
-
-response = requests.post("http://localhost:8000/api/v1/order", json=data, headers=headers)
-print(response.status_code)
-print(response.text)
+#
+# headers = {
+#     "Content-Type": "application/json",
+#     "Authorization": "Token 3a5e07a98278d59ccb67de7bd1a50459916d6d5f" ## используется токен авторизации
+# }
+# data = {
+#     "id": "4",
+#     "contact": 2
+# }
+#
+# response = requests.post("http://localhost:8000/api/v1/order", json=data, headers=headers)
+# print(response.status_code)
+# print(response.text)

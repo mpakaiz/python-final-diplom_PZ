@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
 import logging
-
+from rest_framework import status
 
 from backend.models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
     Contact, ConfirmEmailToken
@@ -42,7 +42,7 @@ class RegisterAccount(APIView):
                 JsonResponse: The response indicating the status of the operation and any errors.
             """
         # проверяем обязательные аргументы
-        if {'first_name', 'last_name', 'email', 'password', 'company', 'position'}.issubset(request.data):
+        if {'first_name', 'last_name', 'email', 'password', 'company', 'position'}.issubset(request.data.keys()):
 
             # проверяем пароль на сложность
             sad = 'asd'
@@ -53,7 +53,8 @@ class RegisterAccount(APIView):
                 # noinspection PyTypeChecker
                 for item in password_error:
                     error_array.append(item)
-                return JsonResponse({'Status': False, 'Errors': {'password': error_array}})
+                # return JsonResponse({'Status': False, 'Errors': {'password': error_array}})
+                return Response({'Status': False, 'Errors': {'password': error_array}})
             else:
                 # проверяем данные для уникальности имени пользователя
 
@@ -63,11 +64,13 @@ class RegisterAccount(APIView):
                     user = user_serializer.save()
                     user.set_password(request.data['password'])
                     user.save()
-                    return JsonResponse({'Status': True})
+                    # return JsonResponse({'Status': True})
+                    return Response({'Status': True})
                 else:
-                    return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
-
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+                    # return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
+                    return Response({'Status': False, 'Errors': user_serializer.errors})
+        # return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+        return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ConfirmAccount(APIView):
@@ -94,7 +97,7 @@ class ConfirmAccount(APIView):
         print(request.data)
 
 
-        if {'email', 'token'}.issubset(request.data):
+        if {'email', 'token'}.issubset(request.data.keys()):
 
             # existing_tokens = ConfirmEmailToken.objects.values_list('key', flat=True)
             # print(f"Existing Tokens: {existing_tokens}")
@@ -121,9 +124,9 @@ class ConfirmAccount(APIView):
                 token.delete()
                 return JsonResponse({'Status': True})
             else:
-                return JsonResponse({'Status': False, 'Errors': 'Неправильно указан токен или email'})
+                return JsonResponse({'Status': False, 'Errors': 'Неправильно указан токен или email'}, status=status.HTTP_400_BAD_REQUEST)
 
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AccountDetails(APIView):
@@ -150,7 +153,7 @@ class AccountDetails(APIView):
                - Response: The response containing the details of the authenticated user.
         """
         if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+            return Response({'Status': False, 'Error': 'Log in required'}, status=403)
 
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
@@ -167,7 +170,7 @@ class AccountDetails(APIView):
                 - JsonResponse: The response indicating the status of the operation and any errors.
                 """
         if not request.user.is_authenticated:
-            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+            return Response({'Status': False, 'Error': 'Log in required'}, status=403)
         # проверяем обязательные аргументы
 
         if 'password' in request.data:
@@ -180,7 +183,7 @@ class AccountDetails(APIView):
                 # noinspection PyTypeChecker
                 for item in password_error:
                     error_array.append(item)
-                return JsonResponse({'Status': False, 'Errors': {'password': error_array}})
+                return Response({'Status': False, 'Errors': {'password': error_array}})
             else:
                 request.user.set_password(request.data['password'])
 
@@ -189,9 +192,9 @@ class AccountDetails(APIView):
 
         if user_serializer.is_valid():
             user_serializer.save()
-            return JsonResponse({'Status': True})
+            return Response({'Status': True})
         else:
-            return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
+            return Response({'Status': False, 'Errors': user_serializer.errors})
 
 
 class LoginAccount(APIView):
@@ -210,18 +213,18 @@ class LoginAccount(APIView):
                 Returns:
                     JsonResponse: The response indicating the status of the operation and any errors.
                 """
-        if {'email', 'password'}.issubset(request.data):
+        if {'email', 'password'}.issubset(request.data.keys()):
             user = authenticate(request, username=request.data['email'], password=request.data['password'])
-
+            print("User:", user)
             if user is not None:
                 if user.is_active:
                     token, _ = Token.objects.get_or_create(user=user)
 
-                    return JsonResponse({'Status': True, 'Token': token.key})
+                    return Response({'Status': True, 'Token': token.key})
 
-            return JsonResponse({'Status': False, 'Errors': 'Не удалось авторизовать'})
+            return Response({'Status': False, 'Errors': 'Не удалось авторизовать'}, status=status.HTTP_400_BAD_REQUEST)
 
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+        return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CategoryView(ListAPIView):

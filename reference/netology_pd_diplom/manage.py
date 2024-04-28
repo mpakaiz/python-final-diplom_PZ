@@ -5,6 +5,7 @@ import sys
 print(sys.path)
 
 
+
 def main():
     # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'netology_pd_diplom.settings')
